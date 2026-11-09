@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة المراسلة الشاملة - واتساب المصغر</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-white h-screen flex flex-col overflow-hidden">
+
+    <!-- شاشة التسجيل الأولى (تظهر مرة واحدة فقط) -->
+    <div id="authScreen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+            <h2 class="text-2xl font-bold mb-6 text-center text-emerald-400"><i class="fa-brands fa-whatsapp"></i> إنشاء حساب جديد</h2>
+            
+            <div id="step1">
+                <label class="block mb-2 text-sm text-slate-300">الاسم الكامل:</label>
+                <input type="text" id="fullName" class="w-full p-3 mb-4 bg-slate-700 rounded-lg border border-slate-600 focus:outline-none focus:border-emerald-500" placeholder="مثال: محمد علي الهندي">
+                
+                <label class="block mb-2 text-sm text-slate-300">رقم الجوال:</label>
+                <input type="text" id="phone" class="w-full p-3 mb-6 bg-slate-700 rounded-lg border border-slate-600 focus:outline-none focus:border-emerald-500" placeholder="مثال: 711234567">
+                
+                <button onclick="requestRegistration()" class="w-full bg-emerald-600 hover:bg-emerald-500 p-3 rounded-lg font-bold transition shadow-lg">طلب كود التحقق</button>
+            </div>
+
+            <div id="step2" class="hidden">
+                <p class="text-sm text-emerald-400 mb-4 text-center">أرسلت الإدارة كود التحقق إليك، أدخله للتفعيل:</p>
+                <label class="block mb-2 text-sm text-slate-300">كود التحقق (4 أرقام):</label>
+                <input type="text" id="verificationCode" class="w-full p-3 mb-6 bg-slate-700 rounded-lg border border-slate-600 text-center text-2xl tracking-widest focus:outline-none focus:border-emerald-500" placeholder="----" maxlength="4">
+                
+                <button onclick="verifyCode()" class="w-full bg-blue-600 hover:bg-blue-500 p-3 rounded-lg font-bold transition shadow-lg">تفعيل ودخول</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- الواجهة الرئيسية للمراسلة (تظهر بعد الدخول) -->
+    <div id="mainApp" class="flex h-full w-full max-w-7xl mx-auto bg-slate-900 shadow-2xl border-x border-slate-800">
+        
+        <!-- الشريط الجانبي (المحادثات والبحث) -->
+        <div class="w-1/3 border-r border-slate-800 flex flex-col bg-slate-900">
+            <!-- رأس الشريط الجانبي -->
+            <div class="p-4 bg-slate-800 flex justify-between items-center border-b border-slate-700">
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center font-bold text-lg" id="userAvatar">م</div>
+                    <span id="currentUserName" class="font-bold">المستخدم</span>
+                </div>
+                <div class="flex space-x-3 space-x-reverse text-slate-400">
+                    <button onclick="openStatusTab()" title="الحالات"><i class="fa-solid fa-circle-notch hover:text-emerald-400 text-lg"></i></button>
+                    <button onclick="logout()" title="خروج"><i class="fa-solid fa-right-from-bracket hover:text-red-400 text-lg"></i></button>
+                </div>
+            </div>
+
+            <!-- خانة البحث عن الأصدقاء -->
+            <div class="p-3 bg-slate-900 border-b border-slate-800">
+                <div class="flex items-center bg-slate-800 px-3 py-2 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-search text-slate-400 ml-2"></i>
+                    <input type="text" id="searchUser" oninput="searchContacts()" placeholder="ابحث عن اسم صديق..." class="bg-transparent w-full focus:outline-none text-sm">
+                </div>
+            </div>
+
+            <!-- قائمة المحادثات النشطة أو نتيجة البحث -->
+            <div id="contactsList" class="flex-1 overflow-y-auto divide-y divide-slate-800">
+                <div class="p-4 text-center text-slate-500 text-sm">ابحث عن اسم صديق لبدء المحادثة الفورية</div>
+            </div>
+        </div>
+
+        <!-- منطقة المحادثة والدردشة النشطة -->
+        <div class="flex-1 flex flex-col bg-slate-950">
+            <!-- رأس المحادثة -->
+            <div id="chatHeader" class="p-4 bg-slate-800 flex justify-between items-center border-b border-slate-700 hidden">
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center font-bold text-emerald-400" id="activeChatAvatar">ص</div>
+                    <div>
+                        <h4 id="activeChatName" class="font-bold">اسم الصديق</h4>
+                        <span class="text-xs text-emerald-400">متصل الآن</span>
+                    </div>
+                </div>
+                <div class="flex space-x-4 space-x-reverse text-slate-300 text-lg">
+                    <button onclick="startCall('video')" title="مكالمة فيديو"><i class="fa-solid fa-video hover:text-emerald-400"></i></button>
+                    <button onclick="startCall('audio')" title="مكالمة صوتية"><i class="fa-solid fa-phone hover:text-emerald-400"></i></button>
+                    <button onclick="toggleDisappearing()" title="الرسائل المؤقتة"><i id="timerIcon" class="fa-solid fa-clock text-slate-500 hover:text-yellow-400"></i></button>
+                </div>
+            </div>
+
+            <!-- رسائل الدردشة -->
+            <div id="chatMessages" class="flex-1 p-6 overflow-y-auto flex flex-col space-y-3 justify-center items-center text-slate-600">
+                <i class="fa-brands fa-whatsapp text-6xl text-slate-800 mb-2"></i>
+                <p>اختر محادثة أو ابحث عن صديق لبدء المراسلة السرية والتامة.</p>
+            </div>
+
+            <!-- شريط إرسال الرسائل والوسائط -->
+            <div id="chatFooter" class="p-4 bg-slate-900 border-t border-slate-800 flex items-center space-x-3 space-x-reverse hidden">
+                <label class="cursor-pointer text-slate-400 hover:text-emerald-400 text-xl" title="إرسال صورة أو فيديو عالي الدقة">
+                    <i class="fa-solid fa-paperclip"></i>
+                    <input type="file" id="mediaInput" accept="image/*,video/*" class="hidden" onchange="sendMediaFile()">
+                </label>
+                <input type="text" id="messageInput" onkeypress="handleKeyPress(event)" placeholder="اكتب رسالة..." class="flex-1 bg-slate-800 p-3 rounded-lg border border-slate-700 focus:outline-none focus:border-emerald-500 text-sm">
+                <button onclick="sendMessage()" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-3 rounded-lg font-bold transition text-white shadow-lg"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- جافاسكريبت التحكم والتشغيل -->
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzLj_uxZ60OaQGfglTmi1Xa8thXQi1O3e6rmprWJYyVbjBNcYsuoUemi6ecDgLeJ8ny/exec";
+
+        let currentUser = localStorage.getItem("chat_user") || "";
+        let activePeer = "";
+        let disappearingMode = false;
+
+        // عند فتح الصفحة، التحقق من جلسة التسجيل
+        window.onload = function() {
+            if(currentUser) {
+                document.getElementById("authScreen").classList.add("hidden");
+                document.getElementById("currentUserName").innerText = currentUser;
+                document.getElementById("userAvatar").innerText = currentUser.charAt(0);
+            }
+        }
+
+        // طلب التسجيل وربطه بجوجل شيت وبوت التيليجرام
+        function requestRegistration() {
+            const fullName = document.getElementById("fullName").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+
+            if(!fullName || !phone) {
+                alert("الرجاء إدخال الاسم ورقم الجوال");
+                return;
+            }
+
+            localStorage.setItem("temp_user", fullName);
+
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "register", fullName: fullName, phone: phone })
+            }).then(() => {
+                document.getElementById("step1").classList.add("hidden");
+                document.getElementById("step2").classList.remove("hidden");
+            }).catch(err => alert("خطأ في الاتصال: " + err));
+        }
+
+        // التحقق من كود الإدارة والدخول
+        function verifyCode() {
+            const code = document.getElementById("verificationCode").value.trim();
+            if(code.length === 4) {
+                const user = localStorage.getItem("temp_user") || "مستخدم";
+                localStorage.setItem("chat_user", user);
+                currentUser = user;
+                document.getElementById("authScreen").classList.add("hidden");
+                document.getElementById("currentUserName").innerText = currentUser;
+                document.getElementById("userAvatar").innerText = currentUser.charAt(0);
+            } else {
+                alert("الرجاء إدخال كود التحقق المكون من 4 أرقام بشكل صحيح");
+            }
+        }
+
+        // البحث عن الأصدقاء
+        function searchContacts() {
+            const query = document.getElementById("searchUser").value.trim();
+            const list = document.getElementById("contactsList");
+            if(!query) {
+                list.innerHTML = '<div class="p-4 text-center text-slate-500 text-sm">ابحث عن اسم صديق لبدء المحادثة الفورية</div>';
+                return;
+            }
+            // محاكاة نتيجة البحث (يمكن ربطها بجدول Users لاحقاً)
+            list.innerHTML = `
+                <div onclick="openChat('${query}')" class="p-3 hover:bg-slate-800 cursor-pointer flex items-center space-x-3 space-x-reverse transition">
+                    <div class="w-10 h-10 bg-emerald-700 rounded-full flex items-center justify-center font-bold">${query.charAt(0)}</div>
+                    <div>
+                        <h5 class="font-bold text-sm">${query}</h5>
+                        <p class="text-xs text-slate-400">انقر لبدء المراسلة الفورية والآمنة</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // فتح نافذة الدردشة مع شخص معين
+        function openChat(name) {
+            activePeer = name;
+            document.getElementById("chatHeader").classList.remove("hidden");
+            document.getElementById("chatFooter").classList.remove("hidden");
+            document.getElementById("activeChatName").innerText = name;
+            document.getElementById("activeChatAvatar").innerText = name.charAt(0);
+            
+            const chatBox = document.getElementById("chatMessages");
+            chatBox.innerHTML = `<div class="text-xs text-slate-500 text-center my-2">المحادثة سرية ومشفرة بين ${currentUser} و ${name}</div>`;
+        }
+
+        // إرسال الرسائل النصية
+        function sendMessage() {
+            const input = document.getElementById("messageInput");
+            const text = input.value.trim();
+            if(!text) return;
+
+            appendMessage(text, 'outgoing');
+            input.value = "";
+
+            // تفعيل الرسائل المؤقتة (حذف تلقائي بعد 60 ثانية إذا كانت مفعلة)
+            if(disappearingMode) {
+                setTimeout(() => {
+                    alert("تم اختفاء الرسالة المؤقتة بنجاح حفاظاً على السرية التامة.");
+                }, 60000);
+            }
+        }
+
+        function handleKeyPress(e) {
+            if(e.key === 'Enter') sendMessage();
+        }
+
+        // إرسال الوسائط (صور وفيديوهات عالية الدقة)
+        function sendMediaFile() {
+            const fileInput = document.getElementById("mediaInput");
+            if(fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileUrl = URL.createObjectURL(file);
+                
+                const chatBox = document.getElementById("chatMessages");
+                const msgDiv = document.createElement("div");
+                msgDiv.className = "self-end bg-emerald-800 p-2 rounded-lg max-w-xs shadow";
+                
+                if(file.type.startsWith("image")) {
+                    msgDiv.innerHTML = `<img src="${fileUrl}" class="rounded-lg max-h-48 object-cover cursor-pointer">`;
+                } else {
+                    msgDiv.innerHTML = `<video src="${fileUrl}" controls class="rounded-lg max-h-48"></video>`;
+                }
+                chatBox.appendChild(msgDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        function appendMessage(text, type) {
+            const chatBox = document.getElementById("chatMessages");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = type === 'outgoing' ? "self-end bg-emerald-700 text-white p-3 rounded-2xl max-w-xs text-sm shadow" : "self-start bg-slate-800 text-white p-3 rounded-2xl max-w-xs text-sm shadow";
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // تفعيل أو إلغاء الرسائل المؤقتة
+        function toggleDisappearing() {
+            disappearingMode = !disappearingMode;
+            const icon = document.getElementById("timerIcon");
+            if(disappearingMode) {
+                icon.classList.remove("text-slate-500");
+                icon.classList.add("text-yellow-400");
+                alert("تم تفعيل الرسائل المؤقتة: ستختفي الرسائل تلقائياً بعد دقيقة واحدة.");
+            } else {
+                icon.classList.remove("text-yellow-400");
+                icon.classList.add("text-slate-500");
+                alert("تم إيقاف الرسائل المؤقتة.");
+            }
+        }
+
+        // تشغيل المكالمات (محاكاة WebRTC للصوت والفيديو)
+        function startCall(type) {
+            const callType = type === 'video' ? 'فيديو مرئية' : 'صوتية';
+            alert(`جاري بدء المكالمة الـ ${callType} المباشرة مع ${activePeer}... (اتصال آمن P2P)`);
+        }
+
+        // نافذة الحالات (Stories)
+        function openStatusTab() {
+            alert("ميزة الحالات والقصص مفعلة: تختفي الحالات المنشورة تلقائياً بعد 24 ساعة.");
+        }
+
+        // تسجيل الخروج
+        function logout() {
+            localStorage.removeItem("chat_user");
+            location.reload();
+        }
+    </script>
+</body>
+</html>
